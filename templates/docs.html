@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation - GrowAGarden.gg API</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    typography: {
+                        DEFAULT: {
+                            css: {
+                                maxWidth: 'none',
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="pt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-3xl mr-3">📚</span>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold text-gray-900">API Documentation</h1>
+                        <p class="text-xs text-gray-500">GrowAGarden.gg API</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">GrowAGarden.gg API</h2>
+                    <p class="text-gray-600 text-lg leading-relaxed max-w-2xl">
+                        REST API for accessing real-time GrowAGarden.gg game data including stock inventory and weather information.
+                    </p>
+                </div>
+                <div class="mt-6 lg:mt-0">
+                    <div class="bg-blue-50 rounded-lg p-4 text-center">
+                        <p class="text-sm font-medium text-blue-900 mb-1">API Version</p>
+                        <p class="text-2xl font-bold text-blue-600">1.0.0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                        </svg>
+                        <h3 class="font-semibold text-gray-900">Base URL</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm break-all font-mono bg-white px-2 py-1 rounded">{{ request.url_root }}api</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="font-semibold text-gray-900">Response Format</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">JSON</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="flex items-center mb-2">
+                        <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <h3 class="font-semibold text-gray-900">Authentication</h3>
+                    </div>
+                    <p class="text-gray-600 text-sm">None required</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <aside class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Navigation</h3>
+                    <nav class="space-y-2">
+                        <a href="#overview" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">Overview</a>
+                        <a href="#get-all-stocks" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">GET /stocks</a>
+                        <a href="#get-category-stocks" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">GET /stocks/{category}</a>
+                        <a href="#get-weather" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">GET /weather</a>
+                        <a href="#error-codes" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">Error Codes</a>
+                        <a href="#rate-limits" class="block text-blue-600 hover:text-blue-700 py-2 px-3 rounded-lg hover:bg-blue-50 transition duration-200">Usage Guidelines</a>
+                    </nav>
+                    
+                    <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h4 class="font-semibold text-green-900 mb-3">🚀 Try Live Endpoints</h4>
+                        <div class="space-y-2">
+                            <a href="/api/stocks" target="_blank" class="block text-sm text-green-700 hover:text-green-900 hover:underline transition duration-200 font-mono">/api/stocks</a>
+                            <a href="/api/weather" target="_blank" class="block text-sm text-green-700 hover:text-green-900 hover:underline transition duration-200 font-mono">/api/weather</a>
+                            <a href="/api/stocks/seed" target="_blank" class="block text-sm text-green-700 hover:text-green-900 hover:underline transition duration-200 font-mono">/api/stocks/seed</a>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-3 space-y-8">
+                <section id="overview" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Overview</h2>
+                    <div class="prose max-w-none">
+                        <p class="text-gray-600 text-lg mb-6 leading-relaxed">
+                            This API provides access to real-time data scraped from GrowAGarden.gg, offering developers a simple way to integrate game data into their applications.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-blue-900 mb-2">📦 Stock Data</h3>
+                                <p class="text-blue-800 text-sm">Complete shop inventory across 7 categories with item names and values.</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-lg p-4">
+                                <h3 class="font-semibold text-purple-900 mb-2">🌤️ Weather Info</h3>
+                                <p class="text-purple-800 text-sm">Current weather conditions, change timestamps, and special weather events.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-semibold text-yellow-800 mb-1">Important Notice</p>
+                                    <p class="text-yellow-700 text-sm">This is an unofficial API. All data belongs to GrowAGarden.gg. Please use responsibly to avoid overloading their servers.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="get-all-stocks" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <div class="flex items-center mb-6">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">GET</span>
+                        <h2 class="text-2xl font-bold text-gray-900">/api/stocks</h2>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-lg">Retrieve complete stock inventory from all shop categories.</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Request</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <code class="text-sm">GET {{ request.url_root }}api/stocks</code>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Response Example</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <pre class="text-sm"><code>{
+  "seed": [
+    {
+      "name": "Carrot",
+      "value": 15
+    },
+    {
+      "name": "Strawberry",
+      "value": 3
+    },
+    {
+      "name": "Watermelon",
+      "value": 4
+    }
+  ],
+  "gear": [
+    {
+      "name": "Basic Shovel",
+      "value": 100
+    }
+  ],
+  "egg": [],
+  "easter": [],
+  "night": [],
+  "honey": [],
+  "cosmetic": []
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Available Categories</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">🌱</span>
+                                    <p class="text-sm font-medium text-green-800 mt-1">seed</p>
+                                </div>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">⚙️</span>
+                                    <p class="text-sm font-medium text-blue-800 mt-1">gear</p>
+                                </div>
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">🥚</span>
+                                    <p class="text-sm font-medium text-yellow-800 mt-1">egg</p>
+                                </div>
+                                <div class="bg-pink-50 border border-pink-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">💄</span>
+                                    <p class="text-sm font-medium text-pink-800 mt-1">cosmetic</p>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">🍯</span>
+                                    <p class="text-sm font-medium text-amber-800 mt-1">honey</p>
+                                </div>
+                                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">🐰</span>
+                                    <p class="text-sm font-medium text-purple-800 mt-1">easter</p>
+                                </div>
+                                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-center">
+                                    <span class="text-lg">🌙</span>
+                                    <p class="text-sm font-medium text-indigo-800 mt-1">night</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="get-category-stocks" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <div class="flex items-center mb-6">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">GET</span>
+                        <h2 class="text-2xl font-bold text-gray-900">/api/stocks/{category}</h2>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-lg">Retrieve stock data for a specific category only.</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Request</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <code class="text-sm">GET {{ request.url_root }}api/stocks/seed</code>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Parameters</h3>
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <p class="font-semibold text-gray-900">category</p>
+                                        <p class="text-sm text-gray-600">The stock category to retrieve</p>
+                                    </div>
+                                    <div class="mt-2 sm:mt-0">
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">Required</span>
+                                    </div>
+                                </div>
+                                <div class="mt-3 text-sm text-gray-600">
+                                    <strong>Valid values:</strong> seed, gear, egg, cosmetic, honey, easter, night
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Response Example</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <pre class="text-sm"><code>{
+  "seed": [
+    {
+      "name": "Carrot",
+      "value": 15
+    },
+    {
+      "name": "Strawberry",
+      "value": 3
+    }
+  ]
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Error Response (Invalid Category)</h3>
+                            <div class="bg-gray-900 text-red-400 p-4 rounded-lg overflow-x-auto">
+                                <pre class="text-sm"><code>{
+  "error": "Invalid category. Valid categories are: seed, gear, egg, cosmetic, honey, easter, night"
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="get-weather" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <div class="flex items-center mb-6">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">GET</span>
+                        <h2 class="text-2xl font-bold text-gray-900">/api/weather</h2>
+                    </div>
+                    <p class="text-gray-600 mb-6 text-lg">Retrieve current weather conditions and upcoming weather changes.</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Request</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <code class="text-sm">GET {{ request.url_root }}api/weather</code>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Response Example</h3>
+                            <div class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+                                <pre class="text-sm"><code>{
+  "currentWeather": {
+    "name": "Sunny",
+    "description": "Clear skies and bright sunshine"
+  },
+  "nextWeatherTimestamp": 1641024000000,
+  "nextWeatherTimestampISO": "2022-01-01T12:00:00",
+  "nextWeatherFormatted": "jan 1 2022 - 12:00pm",
+  "specialWeathers": {
+    "rainEvent": {
+      "timestamp": 1641110400000,
+      "timestampISO": "2022-01-02T12:00:00",
+      "timestampFormatted": "jan 2 2022 - 12:00pm"
+    }
+  }
+}</code></pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Response Fields</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">currentWeather</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Object</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Current weather conditions with name and description</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">nextWeatherTimestamp</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Number</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Unix timestamp in milliseconds for next weather change</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">nextWeatherFormatted</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">String</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Human-readable timestamp for next weather change</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">specialWeathers</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Object</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">Special weather events with timestamps</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="error-codes" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">HTTP Status Codes</h2>
+                    <div class="space-y-4">
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition duration-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mr-3">200</span>
+                                    <span class="font-semibold text-gray-900">OK</span>
+                                </div>
+                                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-600 text-sm">Request successful, data returned successfully</p>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition duration-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <span class="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium mr-3">400</span>
+                                    <span class="font-semibold text-gray-900">Bad Request</span>
+                                </div>
+                                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-600 text-sm">Invalid category parameter provided</p>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition duration-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mr-3">404</span>
+                                    <span class="font-semibold text-gray-900">Not Found</span>
+                                </div>
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-600 text-sm">Requested endpoint does not exist</p>
+                        </div>
+                        
+                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition duration-200">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center">
+                                    <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mr-3">500</span>
+                                    <span class="font-semibold text-gray-900">Internal Server Error</span>
+                                </div>
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-600 text-sm">Failed to scrape data from GrowAGarden.gg or server error</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="rate-limits" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Usage Guidelines</h2>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <svg class="w-6 h-6 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <h3 class="font-semibold text-orange-900">Rate Limiting</h3>
+                            </div>
+                            <p class="text-orange-800 text-sm mb-4">No formal rate limits enforced, but please use responsibly to maintain service quality.</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                            <div class="flex items-center mb-4">
+                                <svg class="w-6 h-6 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <h3 class="font-semibold text-blue-900">Caching</h3>
+                            </div>
+                            <p class="text-blue-800 text-sm">Data is fetched live from the source. Consider implementing your own caching for frequently accessed data.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Best Practices</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700 text-sm">Cache responses when possible to reduce load</span>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700 text-sm">Implement proper error handling for reliability</span>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700 text-sm">Use specific category endpoints when possible</span>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <svg class="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700 text-sm">Monitor for API changes and updates</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <div>
+                                <h4 class="font-semibold text-red-900 mb-1">Prohibited Usage</h4>
+                                <p class="text-red-800 text-sm">Do not spam the API, use it for malicious purposes, or create excessive load that could impact the source website.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-around items-center h-16">
+                <a href="/" class="flex flex-col items-center justify-center p-2 text-blue-600 hover:text-blue-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Dashboard</span>
+                </a>
+
+                <a href="/api" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    <span class="text-xs font-medium">JSON</span>
+                </a>
+
+                <a href="/api/stocks" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Stocks</span>
+                </a>
+
+                <button onclick="scrollToTop()" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Top</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <footer class="bg-white border-t border-gray-200 mt-16 mb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">GrowAGarden.gg API Documentation</h3>
+                <p class="text-gray-600 mb-2">Data source: <a href="https://growagarden.gg" class="text-blue-600 hover:text-blue-700 transition duration-200">GrowAGarden.gg</a></p>
+                <p class="text-gray-500 text-sm">This is an unofficial community tool. Use responsibly and respect the source website.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

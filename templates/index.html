@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GrowAGarden - Live Data Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'slide-down': 'slideDown 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        slideDown: {
+                            '0%': { transform: 'translateY(-100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(0)', opacity: '1' },
+                            '100%': { transform: 'translateY(-100%)', opacity: '0' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
+        <div id="notification-content" class="rounded-xl shadow-lg border p-4 animate-slide-down">
+            <div class="flex items-start">
+                <div id="notification-icon" class="flex-shrink-0 mr-3 mt-0.5"></div>
+                <div class="flex-1 min-w-0">
+                    <p id="notification-title" class="font-semibold text-sm"></p>
+                    <p id="notification-message" class="text-sm mt-1"></p>
+                </div>
+                <button onclick="hideNotification()" class="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center">
+                        <span class="text-3xl">🌱</span>
+                        <div class="ml-3">
+                            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">GrowAGarden.gg</h1>
+                            <p class="text-xs text-gray-500">Live Game Data</p>
+                        </div>
+                    </div>
+                    <span id="status-indicator" class="flex items-center px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span id="status-text">Live</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-24">
+        <div id="loading" class="flex flex-col items-center justify-center py-16">
+            <div class="relative">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div class="w-12 h-12 border-4 border-green-200 border-t-green-600 rounded-full animate-spin absolute top-2 left-2" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+            </div>
+            <p class="mt-6 text-gray-600 text-lg">Loading fresh data...</p>
+            <p class="text-gray-400 text-sm">This may take a few seconds</p>
+        </div>
+
+        <div id="error" class="hidden">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-red-500 mt-1 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">Unable to Load Data</h3>
+                        <p id="error-message" class="text-red-700 mb-4"></p>
+                        <button onclick="refreshData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="content" class="hidden space-y-8">
+            <section id="weather-section">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                        <span class="text-3xl sm:text-4xl mr-3">🌤️</span>
+                        Weather Status
+                    </h2>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Last updated</p>
+                        <p id="last-updated" class="text-sm font-medium text-gray-700"></p>
+                    </div>
+                </div>
+                <div id="weather-data" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"></div>
+            </section>
+
+            <section id="stocks-section">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center mb-4 sm:mb-0">
+                        <span class="text-3xl sm:text-4xl mr-3">🏪</span>
+                        Shop Inventory
+                    </h2>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                        <div id="total-stats" class="text-sm text-gray-600"></div>
+                        <select id="category-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="stocks-data" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"></div>
+            </section>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-around items-center h-16">
+                <button onclick="refreshData()" class="flex flex-col items-center justify-center p-2 text-blue-600 hover:text-blue-700 transition-colors group">
+                    <svg id="refresh-icon" class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Refresh</span>
+                </button>
+
+                <a href="/docs" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">API Docs</span>
+                </a>
+
+                <a href="/api" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                    </svg>
+                    <span class="text-xs font-medium">JSON</span>
+                </a>
+
+                <button onclick="scrollToTop()" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Top</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <footer class="bg-white border-t border-gray-200 mt-16 mb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">GrowAGarden.gg API</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">Unofficial API wrapper providing real-time game data including inventory tracking and weather monitoring.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/api/stocks" class="text-blue-600 hover:text-blue-700 text-sm transition duration-200">/api/stocks</a></li>
+                        <li><a href="/api/weather" class="text-blue-600 hover:text-blue-700 text-sm transition duration-200">/api/weather</a></li>
+                        <li><a href="/docs" class="text-blue-600 hover:text-blue-700 text-sm transition duration-200">Documentation</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Attribution</h3>
+                    <p class="text-gray-600 text-sm">Data source: <a href="https://growagarden.gg" class="text-blue-600 hover:text-blue-700 transition duration-200">GrowAGarden.gg</a></p>
+                    <p class="text-gray-500 text-xs mt-2">Unofficial community tool</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 mt-8 pt-6 text-center">
+                <p class="text-gray-500 text-sm">&copy; 2025 GrowAGarden.gg API Wrapper. All game data belongs to GrowAGarden.gg</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let allStocks = {};
+        let currentFilter = 'all';
+        let notificationTimeout;
+        
+        function showNotification(type, title, message, duration = 5000) {
+            const notification = document.getElementById('notification');
+            const content = document.getElementById('notification-content');
+            const icon = document.getElementById('notification-icon');
+            const titleEl = document.getElementById('notification-title');
+            const messageEl = document.getElementById('notification-message');
+
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+
+            const types = {
+                success: {
+                    bg: 'bg-green-50 border-green-200',
+                    titleColor: 'text-green-800',
+                    messageColor: 'text-green-700',
+                    icon: '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                },
+                error: {
+                    bg: 'bg-red-50 border-red-200',
+                    titleColor: 'text-red-800',
+                    messageColor: 'text-red-700',
+                    icon: '<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                },
+                info: {
+                    bg: 'bg-blue-50 border-blue-200',
+                    titleColor: 'text-blue-800',
+                    messageColor: 'text-blue-700',
+                    icon: '<svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                },
+                warning: {
+                    bg: 'bg-yellow-50 border-yellow-200',
+                    titleColor: 'text-yellow-800',
+                    messageColor: 'text-yellow-700',
+                    icon: '<svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path></svg>'
+                }
+            };
+
+            const config = types[type] || types.info;
+            
+            content.className = `rounded-xl shadow-lg border p-4 animate-slide-down ${config.bg}`;
+            icon.innerHTML = config.icon;
+            titleEl.className = `font-semibold text-sm ${config.titleColor}`;
+            messageEl.className = `text-sm mt-1 ${config.messageColor}`;
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+
+            notification.classList.remove('hidden');
+
+            notificationTimeout = setTimeout(() => {
+                hideNotification();
+            }, duration);
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('notification');
+            const content = document.getElementById('notification-content');
+            
+            content.classList.remove('animate-slide-down');
+            content.classList.add('animate-slide-up');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+                content.classList.remove('animate-slide-up');
+                content.classList.add('animate-slide-down');
+            }, 300);
+
+            if (notificationTimeout) {
+                clearTimeout(notificationTimeout);
+            }
+        }
+        
+        async function fetchStocks() {
+            const response = await fetch(`${API_BASE}/api/stocks`);
+            if (!response.ok) throw new Error(`Failed to fetch stocks (${response.status})`);
+            return await response.json();
+        }
+
+        async function fetchWeather() {
+            const response = await fetch(`${API_BASE}/api/weather`);
+            if (!response.ok) throw new Error(`Failed to fetch weather (${response.status})`);
+            return await response.json();
+        }
+
+        function getCategoryConfig(category) {
+            const configs = {
+                'seed': { emoji: '🌱', color: 'green', name: 'Seeds' },
+                'gear': { emoji: '⚙️', color: 'blue', name: 'Gear' },
+                'egg': { emoji: '🥚', color: 'yellow', name: 'Eggs' },
+                'cosmetic': { emoji: '💄', color: 'pink', name: 'Cosmetics' },
+                'honey': { emoji: '🍯', color: 'amber', name: 'Honey' },
+                'easter': { emoji: '🐰', color: 'purple', name: 'Easter' },
+                'night': { emoji: '🌙', color: 'indigo', name: 'Night Market' }
+            };
+            return configs[category] || { emoji: '📦', color: 'gray', name: category };
+        }
+
+        function getColorClasses(color) {
+            const colors = {
+                'green': { 
+                    header: 'bg-green-500', 
+                    headerText: 'text-white',
+                    accent: 'text-green-600',
+                    badge: 'bg-green-100 text-green-800',
+                    border: 'border-green-200',
+                    quantity: 'bg-green-100 text-green-800'
+                },
+                'blue': { 
+                    header: 'bg-blue-500', 
+                    headerText: 'text-white',
+                    accent: 'text-blue-600',
+                    badge: 'bg-blue-100 text-blue-800',
+                    border: 'border-blue-200',
+                    quantity: 'bg-blue-100 text-blue-800'
+                },
+                'yellow': { 
+                    header: 'bg-yellow-500', 
+                    headerText: 'text-white',
+                    accent: 'text-yellow-600',
+                    badge: 'bg-yellow-100 text-yellow-800',
+                    border: 'border-yellow-200',
+                    quantity: 'bg-yellow-100 text-yellow-800'
+                },
+                'pink': { 
+                    header: 'bg-pink-500', 
+                    headerText: 'text-white',
+                    accent: 'text-pink-600',
+                    badge: 'bg-pink-100 text-pink-800',
+                    border: 'border-pink-200',
+                    quantity: 'bg-pink-100 text-pink-800'
+                },
+                'amber': { 
+                    header: 'bg-amber-500', 
+                    headerText: 'text-white',
+                    accent: 'text-amber-600',
+                    badge: 'bg-amber-100 text-amber-800',
+                    border: 'border-amber-200',
+                    quantity: 'bg-amber-100 text-amber-800'
+                },
+                'purple': { 
+                    header: 'bg-purple-500', 
+                    headerText: 'text-white',
+                    accent: 'text-purple-600',
+                    badge: 'bg-purple-100 text-purple-800',
+                    border: 'border-purple-200',
+                    quantity: 'bg-purple-100 text-purple-800'
+                },
+                'indigo': { 
+                    header: 'bg-indigo-500', 
+                    headerText: 'text-white',
+                    accent: 'text-indigo-600',
+                    badge: 'bg-indigo-100 text-indigo-800',
+                    border: 'border-indigo-200',
+                    quantity: 'bg-indigo-100 text-indigo-800'
+                },
+                'gray': { 
+                    header: 'bg-gray-500', 
+                    headerText: 'text-white',
+                    accent: 'text-gray-600',
+                    badge: 'bg-gray-100 text-gray-800',
+                    border: 'border-gray-200',
+                    quantity: 'bg-gray-100 text-gray-800'
+                }
+            };
+            return colors[color] || colors['gray'];
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function renderWeather(weather) {
+            const weatherData = document.getElementById('weather-data');
+            weatherData.innerHTML = '';
+
+            if (weather.currentWeather) {
+                weatherData.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition duration-200">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                <span class="text-2xl">☀️</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Current Weather</h3>
+                                <p class="text-sm text-gray-500">Active conditions</p>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-blue-600 mb-2">${weather.currentWeather.name}</p>
+                        ${weather.currentWeather.description ? `<p class="text-gray-600 text-sm">${weather.currentWeather.description}</p>` : ''}
+                    </div>
+                `;
+            }
+
+            if (weather.nextWeatherFormatted) {
+                weatherData.innerHTML += `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition duration-200">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                                <span class="text-2xl">⏰</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Next Change</h3>
+                                <p class="text-sm text-gray-500">Upcoming weather</p>
+                            </div>
+                        </div>
+                        <p class="text-lg font-bold text-purple-600">${weather.nextWeatherFormatted}</p>
+                    </div>
+                `;
+            }
+
+            if (weather.specialWeathers && Object.keys(weather.specialWeathers).length > 0) {
+                let specialEventsHtml = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition duration-200">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                                <span class="text-2xl">⭐</span>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Special Events</h3>
+                                <p class="text-sm text-gray-500">${Object.keys(weather.specialWeathers).length} event(s)</p>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                `;
+                
+                for (const [event, data] of Object.entries(weather.specialWeathers)) {
+                    specialEventsHtml += `
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="font-medium text-orange-600 capitalize">${event.replace(/([A-Z])/g, ' $1').trim()}</p>
+                                ${data.timestampFormatted ? `<p class="text-sm text-gray-600">${data.timestampFormatted}</p>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                specialEventsHtml += `</div></div>`;
+                weatherData.innerHTML += specialEventsHtml;
+            }
+
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        }
+
+        function updateCategoryFilter(stocks) {
+            const filter = document.getElementById('category-filter');
+            const currentValue = filter.value;
+            
+            filter.innerHTML = '<option value="all">All Categories</option>';
+            
+            for (const [category, items] of Object.entries(stocks)) {
+                if (items.length > 0) {
+                    const config = getCategoryConfig(category);
+                    const totalValue = items.reduce((sum, item) => sum + (item.value || 0), 0);
+                    filter.innerHTML += `<option value="${category}">${config.emoji} ${config.name} (${totalValue})</option>`;
+                }
+            }
+            
+            filter.value = currentValue;
+        }
+
+        function filterStocks() {
+            if (currentFilter === 'all') {
+                renderStocks(allStocks);
+            } else {
+                const filtered = {};
+                filtered[currentFilter] = allStocks[currentFilter] || [];
+                renderStocks(filtered);
+            }
+        }
+
+        function renderStocks(stocks) {
+            const stocksData = document.getElementById('stocks-data');
+            stocksData.innerHTML = '';
+
+            let totalItems = 0;
+            let totalValue = 0;
+            let categoriesWithStock = 0;
+
+            for (const [category, items] of Object.entries(stocks)) {
+                if (items.length > 0) {
+                    const config = getCategoryConfig(category);
+                    const colors = getColorClasses(config.color);
+                    
+                    let categoryValue = 0;
+                    let availableCount = 0;
+                    
+                    items.forEach(item => {
+                        if (item.value) categoryValue += item.value;
+                        if (item.value > 0) availableCount++;
+                    });
+
+                    totalItems += items.length;
+                    totalValue += categoryValue;
+                    categoriesWithStock++;
+
+                    const categoryHtml = `
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition duration-200">
+                            <div class="${colors.header} p-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <span class="text-2xl mr-3">${config.emoji}</span>
+                                        <div>
+                                            <h3 class="text-lg font-bold ${colors.headerText}">${config.name}</h3>
+                                            <p class="text-sm ${colors.headerText} opacity-90">${items.length} item${items.length !== 1 ? 's' : ''}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="${colors.headerText} text-lg font-bold">${categoryValue.toLocaleString()}</p>
+                                        <p class="text-sm ${colors.headerText} opacity-90">Total value</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                ${items.length > 0 ? `
+                                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                                        ${items.map(item => {
+                                            const displayValue = item.value !== undefined ? item.value : 0;
+                                            
+                                            return `
+                                                <div class="border ${colors.border} rounded-2xl p-4 hover:bg-gray-50 transition duration-200 transform hover:scale-102">
+                                                    <div class="flex justify-between items-center">
+                                                        <div class="flex-1 min-w-0 pr-3">
+                                                            <h4 class="font-semibold text-gray-900 text-base">${item.name}</h4>
+                                                        </div>
+                                                        <div class="flex flex-col items-end">
+                                                            <span class="inline-flex items-center px-4 py-2 text-lg font-bold ${colors.quantity} rounded-full">
+                                                                ${displayValue.toLocaleString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                ` : '<div class="text-center py-8 text-gray-500"><p>No items available in this category</p></div>'}
+                            </div>
+                        </div>
+                    `;
+                    stocksData.innerHTML += categoryHtml;
+                }
+            }
+
+            document.getElementById('total-stats').innerHTML = `
+                <div class="text-right">
+                    <p class="font-semibold">${totalItems.toLocaleString()} total items</p>
+                    <p class="text-sm text-gray-600">${totalValue.toLocaleString()} total value</p>
+                </div>
+            `;
+        }
+
+        async function loadData() {
+            try {
+                setLoadingState(true);
+                
+                const refreshIcon = document.getElementById('refresh-icon');
+                refreshIcon.classList.add('animate-spin');
+
+                const [stocks, weather] = await Promise.all([
+                    fetchStocks(),
+                    fetchWeather()
+                ]);
+
+                allStocks = stocks;
+                updateCategoryFilter(stocks);
+                renderWeather(weather);
+                filterStocks();
+
+                setLoadingState(false);
+                setStatusIndicator('success', 'Live');
+                showNotification('success', 'Data Updated', 'Successfully refreshed all game data');
+                
+                refreshIcon.classList.remove('animate-spin');
+            } catch (error) {
+                setLoadingState(false, error.message);
+                setStatusIndicator('error', 'Error');
+                showNotification('error', 'Update Failed', `Failed to load data: ${error.message}`);
+                
+                const refreshIcon = document.getElementById('refresh-icon');
+                refreshIcon.classList.remove('animate-spin');
+                
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function setLoadingState(isLoading, errorMessage = null) {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const contentEl = document.getElementById('content');
+
+            if (isLoading) {
+                loadingEl.classList.remove('hidden');
+                errorEl.classList.add('hidden');
+                contentEl.classList.add('hidden');
+            } else if (errorMessage) {
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                contentEl.classList.add('hidden');
+                document.getElementById('error-message').textContent = errorMessage;
+            } else {
+                loadingEl.classList.add('hidden');
+                errorEl.classList.add('hidden');
+                contentEl.classList.remove('hidden');
+            }
+        }
+
+        function setStatusIndicator(status, text) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            indicator.className = 'flex items-center px-3 py-1 text-sm rounded-full';
+            
+            if (status === 'success') {
+                indicator.classList.add('bg-green-100', 'text-green-800');
+                indicator.innerHTML = `<div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div><span>${text}</span>`;
+            } else if (status === 'error') {
+                indicator.classList.add('bg-red-100', 'text-red-800');
+                indicator.innerHTML = `<div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div><span>${text}</span>`;
+            }
+        }
+
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        function refreshData() {
+            loadData();
+        }
+
+        document.getElementById('category-filter').addEventListener('change', function(e) {
+            currentFilter = e.target.value;
+            filterStocks();
+            showNotification('info', 'Filter Applied', `Showing ${currentFilter === 'all' ? 'all categories' : getCategoryConfig(currentFilter).name}`);
+        });
+
+        loadData();
+        setInterval(loadData, 300000);
+    </script>
+</body>
+</html>
