@@ -91,11 +91,25 @@ class GrowAGardenScraper:
                 quantity_part = parts[1].replace("**", "").strip()
                 try:
                     quantity = int(quantity_part)
-                    return {"name": name, "quantity": quantity}
+                    return {
+                        "name": name,
+                        "price": None,
+                        "quantity": quantity,
+                        "inStock": quantity > 0,
+                        "maxQuantity": quantity,
+                        "category": "unknown",
+                    }
                 except ValueError:
                     pass
 
-        return {"name": item_string.replace("**", "").strip(), "quantity": 1}
+        return {
+            "name": item_string.replace("**", "").strip(),
+            "price": None,
+            "quantity": 1,
+            "inStock": True,
+            "maxQuantity": 1,
+            "category": "unknown",
+        }
 
     def convert_fallback_to_main_format(
         self, fallback_data: Dict[str, Any]
@@ -110,30 +124,37 @@ class GrowAGardenScraper:
             "cosmetic": [],
         }
 
-        if "gear" in fallback_data:
-            converted["gear"] = [
-                self.parse_fallback_item(item) for item in fallback_data["gear"]
-            ]
+        if "gear" in fallback_data and isinstance(fallback_data["gear"], list):
+            for item in fallback_data["gear"]:
+                parsed_item = self.parse_fallback_item(item)
+                parsed_item["category"] = "gear"
+                converted["gear"].append(parsed_item)
 
-        if "seeds" in fallback_data:
-            converted["seed"] = [
-                self.parse_fallback_item(item) for item in fallback_data["seeds"]
-            ]
+        if "seeds" in fallback_data and isinstance(fallback_data["seeds"], list):
+            for item in fallback_data["seeds"]:
+                parsed_item = self.parse_fallback_item(item)
+                parsed_item["category"] = "seed"
+                converted["seed"].append(parsed_item)
 
-        if "egg" in fallback_data:
-            converted["egg"] = [
-                self.parse_fallback_item(item) for item in fallback_data["egg"]
-            ]
+        if "egg" in fallback_data and isinstance(fallback_data["egg"], list):
+            for item in fallback_data["egg"]:
+                parsed_item = self.parse_fallback_item(item)
+                parsed_item["category"] = "egg"
+                converted["egg"].append(parsed_item)
 
-        if "honey" in fallback_data:
-            converted["honey"] = [
-                self.parse_fallback_item(item) for item in fallback_data["honey"]
-            ]
+        if "honey" in fallback_data and isinstance(fallback_data["honey"], list):
+            for item in fallback_data["honey"]:
+                parsed_item = self.parse_fallback_item(item)
+                parsed_item["category"] = "honey"
+                converted["honey"].append(parsed_item)
 
-        if "cosmetics" in fallback_data:
-            converted["cosmetic"] = [
-                self.parse_fallback_item(item) for item in fallback_data["cosmetics"]
-            ]
+        if "cosmetics" in fallback_data and isinstance(
+            fallback_data["cosmetics"], list
+        ):
+            for item in fallback_data["cosmetics"]:
+                parsed_item = self.parse_fallback_item(item)
+                parsed_item["category"] = "cosmetic"
+                converted["cosmetic"].append(parsed_item)
 
         return converted
 
