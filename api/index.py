@@ -260,33 +260,7 @@ class GrowAGardenScraper:
     def get_fallback_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
         print("Attempting to fetch stock data from fallback APIs...")
 
-        print("Trying fallback2 API first...")
-        try:
-            fallback2_data = self.fetch_fallback2_stock()
-            if fallback2_data and fallback2_data.get("success"):
-                converted_data = self.convert_fallback2_to_main_format(fallback2_data)
-
-                total_items = sum(
-                    len(category_items) for category_items in converted_data.values()
-                )
-                if total_items > 0:
-                    print(
-                        f"✓ Successfully retrieved data from fallback2 API - Total items: {total_items}"
-                    )
-
-                    for category, items in converted_data.items():
-                        if items:
-                            print(f"  - {category}: {len(items)} items")
-
-                    return {"source": "fallback2", "data": converted_data}
-                else:
-                    print("✗ Fallback2 API returned empty data")
-            else:
-                print("✗ Failed to fetch from fallback2 API")
-        except Exception as e:
-            print(f"✗ Error with fallback2 API: {e}")
-
-        print("Trying fallback1 API...")
+        print("Trying fallback1 API first...")
         all_fallback_data = {}
         fallback_success = False
 
@@ -353,6 +327,32 @@ class GrowAGardenScraper:
                     print(f"  - {category}: {len(items)} items")
 
             return {"source": "fallback1", "data": converted_data}
+
+        print("Trying fallback2 API...")
+        try:
+            fallback2_data = self.fetch_fallback2_stock()
+            if fallback2_data and fallback2_data.get("success"):
+                converted_data = self.convert_fallback2_to_main_format(fallback2_data)
+
+                total_items = sum(
+                    len(category_items) for category_items in converted_data.values()
+                )
+                if total_items > 0:
+                    print(
+                        f"✓ Successfully retrieved data from fallback2 API - Total items: {total_items}"
+                    )
+
+                    for category, items in converted_data.items():
+                        if items:
+                            print(f"  - {category}: {len(items)} items")
+
+                    return {"source": "fallback2", "data": converted_data}
+                else:
+                    print("✗ Fallback2 API returned empty data")
+            else:
+                print("✗ Failed to fetch from fallback2 API")
+        except Exception as e:
+            print(f"✗ Error with fallback2 API: {e}")
 
         print("✗ Failed to retrieve any data from fallback APIs")
         return None
@@ -451,7 +451,7 @@ class GrowAGardenScraper:
                 fallback_result = self.get_fallback_stocks()
                 if fallback_result:
                     normalized_data = self.normalize_stock_data(fallback_result["data"])
-                    normalized_data["_source"] = fallback_result["source"]
+                    normalized_data["source"] = fallback_result["source"]
                     return normalized_data
                 return None
 
@@ -461,7 +461,7 @@ class GrowAGardenScraper:
                 fallback_result = self.get_fallback_stocks()
                 if fallback_result:
                     normalized_data = self.normalize_stock_data(fallback_result["data"])
-                    normalized_data["_source"] = fallback_result["source"]
+                    normalized_data["source"] = fallback_result["source"]
                     return normalized_data
                 return None
 
@@ -483,19 +483,19 @@ class GrowAGardenScraper:
             }
 
             normalized_result = self.normalize_stock_data(result)
-            normalized_result["_source"] = "main"
+            normalized_result["source"] = "main"
 
             total_items = sum(
                 len(category_items)
                 for category, category_items in normalized_result.items()
-                if category != "_source"
+                if category != "source"
             )
             print(
                 f"✅ Successfully retrieved stock data from main source - Total items: {total_items}"
             )
 
             for category, items in normalized_result.items():
-                if category != "_source" and items:
+                if category != "source" and items:
                     items_with_available = [
                         item for item in items if "available" in item
                     ]
@@ -518,7 +518,7 @@ class GrowAGardenScraper:
             fallback_result = self.get_fallback_stocks()
             if fallback_result:
                 normalized_data = self.normalize_stock_data(fallback_result["data"])
-                normalized_data["_source"] = fallback_result["source"]
+                normalized_data["source"] = fallback_result["source"]
                 return normalized_data
             return None
 
