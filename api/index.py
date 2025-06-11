@@ -91,15 +91,11 @@ class GrowAGardenScraper:
                 quantity_part = parts[1].replace("**", "").strip()
                 try:
                     quantity = int(quantity_part)
-                    return {"name": name, "quantity": quantity, "inStock": quantity > 0}
+                    return {"name": name, "quantity": quantity}
                 except ValueError:
                     pass
 
-        return {
-            "name": item_string.replace("**", "").strip(),
-            "quantity": 1,
-            "inStock": True,
-        }
+        return {"name": item_string.replace("**", "").strip(), "quantity": 1}
 
     def convert_fallback_to_main_format(
         self, fallback_data: Dict[str, Any]
@@ -146,10 +142,13 @@ class GrowAGardenScraper:
 
         all_fallback_data = {}
 
+        # Fetch gear and seeds together
         gear_seeds_data = self.fetch_fallback_stock("gear-seeds")
         if gear_seeds_data:
             all_fallback_data.update(gear_seeds_data)
+            print(f"Fetched gear-seeds data: {gear_seeds_data}")
 
+        # Fetch other categories
         egg_data = self.fetch_fallback_stock("egg")
         if egg_data:
             all_fallback_data.update(egg_data)
@@ -162,8 +161,11 @@ class GrowAGardenScraper:
         if cosmetics_data:
             all_fallback_data.update(cosmetics_data)
 
+        print(f"All fallback data collected: {all_fallback_data}")
+
         if all_fallback_data:
             converted_data = self.convert_fallback_to_main_format(all_fallback_data)
+            print(f"Converted fallback data: {converted_data}")
             print("Successfully retrieved stock data from fallback API")
             return converted_data
 
