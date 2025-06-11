@@ -106,11 +106,11 @@ class GrowAGardenScraper:
                 name = parts[0].strip()
                 try:
                     value = int(parts[1].strip())
-                    return {"name": name, "value": value, "available": value > 0}
+                    return {"name": name, "value": value}
                 except ValueError:
                     pass
 
-        return {"name": clean_item, "value": 1, "available": True}
+        return {"name": clean_item, "value": 1}
 
     def convert_fallback_to_main_format(
         self, fallback_data: Dict[str, Any]
@@ -220,12 +220,7 @@ class GrowAGardenScraper:
 
             for category, items in converted_data.items():
                 if items:
-                    available_items = [
-                        item for item in items if item.get("available", True)
-                    ]
-                    print(
-                        f"  - {category}: {len(items)} items ({len(available_items)} available)"
-                    )
+                    print(f"  - {category}: {len(items)} items")
 
             return converted_data
 
@@ -302,13 +297,13 @@ class GrowAGardenScraper:
                 normalized_item = {
                     "name": item.get("name", ""),
                     "value": item.get("value", item.get("quantity", 1)),
-                    "available": item.get(
-                        "available", item.get("value", item.get("quantity", 1)) > 0
-                    ),
                 }
 
                 if "price" in item:
                     normalized_item["price"] = item["price"]
+
+                if "available" in item:
+                    normalized_item["available"] = item["available"]
 
                 normalized_items.append(normalized_item)
 
@@ -364,12 +359,20 @@ class GrowAGardenScraper:
 
             for category, items in normalized_result.items():
                 if items:
-                    available_items = [
-                        item for item in items if item.get("available", True)
+                    items_with_available = [
+                        item for item in items if "available" in item
                     ]
-                    print(
-                        f"  - {category}: {len(items)} items ({len(available_items)} available)"
-                    )
+                    if items_with_available:
+                        available_items = [
+                            item
+                            for item in items_with_available
+                            if item.get("available", True)
+                        ]
+                        print(
+                            f"  - {category}: {len(items)} items ({len(available_items)} available)"
+                        )
+                    else:
+                        print(f"  - {category}: {len(items)} items")
 
             return normalized_result
 
@@ -490,7 +493,7 @@ def api_info():
                 },
             },
             "data_format": {
-                "stocks": "Array of items with name, value, and availability info",
+                "stocks": "Array of items with name and value info (available field only from main API)",
                 "weather": "Current weather state, timestamps, and special weather events",
             },
             "rate_limits": "Please use responsibly to avoid overloading the source website",
