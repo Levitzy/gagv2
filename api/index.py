@@ -106,16 +106,11 @@ class GrowAGardenScraper:
                 name = parts[0].strip()
                 try:
                     value = int(parts[1].strip())
-                    return {
-                        "name": name,
-                        "value": value,
-                        "quantity": 1 if value > 0 else 0,
-                        "available": value > 0,
-                    }
+                    return {"name": name, "value": value, "available": value > 0}
                 except ValueError:
                     pass
 
-        return {"name": clean_item, "value": 1, "quantity": 1, "available": True}
+        return {"name": clean_item, "value": 1, "available": True}
 
     def convert_fallback_to_main_format(
         self, fallback_data: Dict[str, Any]
@@ -307,9 +302,6 @@ class GrowAGardenScraper:
                 normalized_item = {
                     "name": item.get("name", ""),
                     "value": item.get("value", item.get("quantity", 1)),
-                    "quantity": (
-                        1 if item.get("value", item.get("quantity", 1)) > 0 else 0
-                    ),
                     "available": item.get(
                         "available", item.get("value", item.get("quantity", 1)) > 0
                     ),
@@ -498,7 +490,7 @@ def api_info():
                 },
             },
             "data_format": {
-                "stocks": "Array of items with name, value, quantity, and availability info",
+                "stocks": "Array of items with name, value, and availability info",
                 "weather": "Current weather state, timestamps, and special weather events",
             },
             "rate_limits": "Please use responsibly to avoid overloading the source website",
