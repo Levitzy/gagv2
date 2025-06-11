@@ -16,6 +16,8 @@
                         'slide-up': 'slideUp 0.3s ease-out',
                         'fade-in': 'fadeIn 0.5s ease-out',
                         'scale-up': 'scaleUp 0.2s ease-out',
+                        'float': 'float 3s ease-in-out infinite',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
                     },
                     keyframes: {
                         slideDown: {
@@ -33,6 +35,14 @@
                         scaleUp: {
                             '0%': { transform: 'scale(0.95)', opacity: '0.8' },
                             '100%': { transform: 'scale(1)', opacity: '1' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)' },
+                            '100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.8)' }
                         }
                     }
                 }
@@ -40,7 +50,7 @@
         }
     </script>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+<body class="bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 min-h-screen">
     <div id="notification" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-sm w-full mx-4">
         <div id="notification-content" class="rounded-xl shadow-lg border p-4 animate-slide-down backdrop-blur-sm">
             <div class="flex items-start">
@@ -58,16 +68,52 @@
         </div>
     </div>
 
+    <header class="pt-6 pb-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="relative">
+                        <span class="text-4xl sm:text-5xl animate-float">🌱</span>
+                        <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    </div>
+                    <div class="ml-4">
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                            GrowAGarden.gg
+                        </h1>
+                        <p class="text-sm sm:text-base text-gray-600 font-medium">Live Data Dashboard v2.0</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="api-status-indicator" class="hidden sm:flex items-center gap-2">
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs text-gray-500">API Status</span>
+                            <div id="api-status-details" class="text-xs font-medium"></div>
+                        </div>
+                        <div id="api-status-icon" class="w-3 h-3 rounded-full animate-pulse"></div>
+                    </div>
+                    <span id="status-indicator" class="flex items-center px-3 py-1.5 bg-green-100 text-green-800 text-xs sm:text-sm rounded-full shadow-sm animate-glow">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                        <span id="status-text">Live</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </header>
+
     <main class="min-h-screen px-3 sm:px-4 lg:px-6 py-4 sm:py-6 pb-24">
         <div class="max-w-7xl mx-auto">
             <div id="loading" class="flex flex-col items-center justify-center py-16 sm:py-24">
                 <div class="relative mb-8">
                     <div class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
                     <div class="w-12 h-12 sm:w-16 sm:h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin absolute top-2 left-2 sm:top-2 sm:left-2" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+                    <div class="w-8 h-8 sm:w-12 sm:h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin absolute top-4 left-4 sm:top-4 sm:left-4" style="animation-duration: 2s;"></div>
                 </div>
                 <div class="text-center">
-                    <p class="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Loading fresh data...</p>
-                    <p class="text-sm sm:text-base text-gray-500">This may take a few seconds</p>
+                    <p class="text-lg sm:text-xl font-semibold text-gray-700 mb-2 animate-pulse">Loading fresh data...</p>
+                    <p class="text-sm sm:text-base text-gray-500">Connecting to multiple API sources</p>
+                    <div id="loading-progress" class="mt-4 w-64 bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-blue-600 to-green-600 h-2 rounded-full animate-pulse" style="width: 45%"></div>
+                    </div>
                 </div>
             </div>
 
@@ -80,31 +126,33 @@
                         <div class="flex-1">
                             <h3 class="text-base sm:text-lg font-semibold text-red-800 mb-2">Unable to Load Data</h3>
                             <p id="error-message" class="text-sm sm:text-base text-red-700 mb-4"></p>
-                            <button onclick="refreshData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200 transform hover:scale-105">
-                                Try Again
-                            </button>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button onclick="refreshData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200 transform hover:scale-105">
+                                    Try Again
+                                </button>
+                                <button onclick="checkAPIHealth()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition duration-200 transform hover:scale-105">
+                                    Check API Status
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="content" class="hidden space-y-6 sm:space-y-8 animate-fade-in">
+                <div class="text-right mb-4">
+                    <p class="text-xs text-gray-500">Last updated</p>
+                    <p id="last-updated" class="text-xs font-medium text-gray-700"></p>
+                </div>
 
                 <section id="weather-section">
                     <div class="flex items-center justify-between mb-4 sm:mb-6">
                         <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center">
-                            <span class="text-2xl sm:text-3xl lg:text-4xl mr-3">🌤️</span>
+                            <span class="text-2xl sm:text-3xl lg:text-4xl mr-3 animate-float">🌤️</span>
                             Weather Status
                         </h2>
-                        <div class="flex items-center gap-4">
-                            <span id="status-indicator" class="flex items-center px-3 py-1.5 bg-green-100 text-green-800 text-xs sm:text-sm rounded-full shadow-sm">
-                                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                                <span id="status-text">Live</span>
-                            </span>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Last updated</p>
-                                <p id="last-updated" class="text-xs font-medium text-gray-700"></p>
-                            </div>
+                        <div id="weather-status" class="text-xs sm:text-sm text-gray-500 bg-white/50 backdrop-blur-sm px-3 py-1 rounded-full">
+                            Main API Only
                         </div>
                     </div>
                     <div id="weather-data" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-6"></div>
@@ -113,12 +161,13 @@
                 <section id="stocks-section">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4 sm:mb-6 gap-4">
                         <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center">
-                            <span class="text-2xl sm:text-3xl lg:text-4xl mr-3">🏪</span>
+                            <span class="text-2xl sm:text-3xl lg:text-4xl mr-3 animate-float">🏪</span>
                             Shop Inventory
+                            <span id="api-source-badge" class="ml-3 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full"></span>
                         </h2>
                         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                             <div id="total-stats" class="text-sm text-gray-600 order-2 sm:order-1"></div>
-                            <select id="category-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm order-1 sm:order-2 w-full sm:w-auto">
+                            <select id="category-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm order-1 sm:order-2 w-full sm:w-auto transition-all duration-200 hover:shadow-md">
                                 <option value="all">All Categories</option>
                             </select>
                         </div>
@@ -154,6 +203,13 @@
                     <span class="text-xs font-medium">JSON</span>
                 </a>
 
+                <button onclick="checkAPIHealth()" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-xs font-medium">Health</span>
+                </button>
+
                 <button onclick="scrollToTop()" class="flex flex-col items-center justify-center p-2 text-gray-600 hover:text-gray-700 transition-colors group">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 mb-1 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
@@ -164,32 +220,46 @@
         </div>
     </nav>
 
-    <footer class="bg-gradient-to-r from-gray-900 to-gray-800 text-white mt-12 sm:mt-16 mb-16">
+    <footer class="bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 text-white mt-12 sm:mt-16 mb-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                 <div>
                     <h3 class="text-lg font-semibold mb-4 flex items-center">
-                        <span class="text-2xl mr-2">🌱</span>
-                        GrowAGarden.gg API
+                        <span class="text-2xl mr-2 animate-float">🌱</span>
+                        GrowAGarden.gg API v2.0
                     </h3>
-                    <p class="text-gray-300 text-sm leading-relaxed">Unofficial API wrapper providing real-time game data including inventory tracking and weather monitoring.</p>
+                    <p class="text-gray-300 text-sm leading-relaxed">Unofficial API wrapper with dual-source reliability providing real-time game data.</p>
                 </div>
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
                     <ul class="space-y-2">
                         <li><a href="/api/stocks" class="text-blue-400 hover:text-blue-300 text-sm transition duration-200">/api/stocks</a></li>
                         <li><a href="/api/weather" class="text-blue-400 hover:text-blue-300 text-sm transition duration-200">/api/weather</a></li>
+                        <li><a href="/health" class="text-blue-400 hover:text-blue-300 text-sm transition duration-200">/health</a></li>
                         <li><a href="/docs" class="text-blue-400 hover:text-blue-300 text-sm transition duration-200">Documentation</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-lg font-semibold mb-4">Attribution</h3>
-                    <p class="text-gray-300 text-sm">Data source: <a href="https://growagarden.gg" class="text-blue-400 hover:text-blue-300 transition duration-200">GrowAGarden.gg</a></p>
-                    <p class="text-gray-400 text-xs mt-2">Unofficial community tool</p>
+                    <h3 class="text-lg font-semibold mb-4">Data Sources</h3>
+                    <ul class="space-y-1 text-sm">
+                        <li class="text-gray-300">Primary: <a href="https://growagarden.gg" class="text-blue-400 hover:text-blue-300 transition duration-200">GrowAGarden.gg</a></li>
+                        <li class="text-gray-300">Fallback: <span class="text-blue-400">growagardenstock.com</span></li>
+                        <li class="text-gray-400 text-xs mt-2">Auto-failover enabled</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">System Status</h3>
+                    <div id="footer-status" class="space-y-1 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                            <span class="text-gray-300">API Online</span>
+                        </div>
+                        <div class="text-gray-400 text-xs">Multi-source architecture</div>
+                    </div>
                 </div>
             </div>
             <div class="border-t border-gray-700 mt-8 pt-6 text-center">
-                <p class="text-gray-400 text-sm">&copy; 2025 GrowAGarden.gg API Wrapper. All game data belongs to GrowAGarden.gg</p>
+                <p class="text-gray-400 text-sm">&copy; 2025 GrowAGarden.gg API Wrapper v2.0. All game data belongs to GrowAGarden.gg</p>
             </div>
         </div>
     </footer>
@@ -200,6 +270,7 @@
         let currentFilter = 'all';
         let notificationTimeout;
         let restockInterval;
+        let apiSource = 'unknown';
         const PH_OFFSET = 8 * 60 * 60 * 1000;
 
         function pad(n) {
@@ -265,10 +336,10 @@
             restockContainer.innerHTML = timerConfigs.map(config => {
                 const colors = getColorClasses(config.color);
                 return `
-                    <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 sm:p-4 hover:shadow-md transition-all duration-300">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 sm:p-4 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
                         <div class="flex items-center justify-between mb-2">
                             <div class="flex items-center">
-                                <span class="text-lg mr-2">${config.emoji}</span>
+                                <span class="text-lg mr-2 animate-float">${config.emoji}</span>
                                 <span class="text-sm font-semibold text-gray-900">${config.name}</span>
                             </div>
                         </div>
@@ -365,6 +436,72 @@
             return await response.json();
         }
 
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const health = await response.json();
+                
+                const mainStatus = health.apis.main_api.status;
+                const fallbackStatus = health.apis.fallback_api.status;
+                
+                let message = `Main API: ${mainStatus}, Fallback API: ${fallbackStatus}`;
+                let type = health.status === 'healthy' ? 'success' : 'warning';
+                
+                showNotification(type, 'API Health Check', message);
+                updateAPIStatusIndicator(health);
+                
+                return health;
+            } catch (error) {
+                showNotification('error', 'Health Check Failed', 'Unable to check API status');
+                return null;
+            }
+        }
+
+        function updateAPIStatusIndicator(health) {
+            const indicator = document.getElementById('api-status-indicator');
+            const details = document.getElementById('api-status-details');
+            const icon = document.getElementById('api-status-icon');
+            
+            if (health) {
+                const mainStatus = health.apis.main_api.status;
+                const fallbackStatus = health.apis.fallback_api.status;
+                
+                details.textContent = `Main: ${mainStatus} | Fallback: ${fallbackStatus}`;
+                
+                if (health.status === 'healthy') {
+                    icon.className = 'w-3 h-3 rounded-full bg-green-500 animate-pulse';
+                } else {
+                    icon.className = 'w-3 h-3 rounded-full bg-yellow-500 animate-pulse';
+                }
+                
+                indicator.classList.remove('hidden');
+            }
+        }
+
+        function detectAPISource(stocks) {
+            if (stocks && Object.keys(stocks).length > 0) {
+                const firstCategory = Object.values(stocks).find(items => items.length > 0);
+                if (firstCategory && firstCategory.length > 0) {
+                    const hasAvailableField = firstCategory.some(item => 'available' in item);
+                    apiSource = hasAvailableField ? 'Main API' : 'Fallback API';
+                } else {
+                    apiSource = 'Unknown';
+                }
+            } else {
+                apiSource = 'No Data';
+            }
+            
+            const badge = document.getElementById('api-source-badge');
+            if (badge) {
+                badge.textContent = apiSource;
+                badge.className = `ml-3 text-xs px-2 py-1 rounded-full ${
+                    apiSource === 'Main API' ? 'bg-green-100 text-green-800' : 
+                    apiSource === 'Fallback API' ? 'bg-yellow-100 text-yellow-800' : 
+                    'bg-gray-100 text-gray-800'
+                }`;
+            }
+        }
+
         function getCategoryConfig(category) {
             const configs = {
                 'seed': { emoji: '🌱', color: 'green', name: 'Seeds' },
@@ -448,24 +585,32 @@
             return colors[color] || colors['gray'];
         }
 
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount);
-        }
-
         function renderWeather(weather) {
             const weatherData = document.getElementById('weather-data');
             weatherData.innerHTML = '';
 
+            if (!weather) {
+                weatherData.innerHTML = `
+                    <div class="col-span-full bg-yellow-50/80 backdrop-blur-sm rounded-2xl shadow-sm border border-yellow-200/50 p-4 sm:p-6">
+                        <div class="flex items-center">
+                            <svg class="w-6 h-6 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            <div>
+                                <h3 class="font-semibold text-yellow-800">Weather Data Unavailable</h3>
+                                <p class="text-sm text-yellow-700">Weather information is only available from the main API source.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
             if (weather.currentWeather) {
                 weatherData.innerHTML += `
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-scale-up">
                         <div class="flex items-center mb-4">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg animate-float">
                                 <span class="text-lg sm:text-2xl">☀️</span>
                             </div>
                             <div>
@@ -481,9 +626,9 @@
 
             if (weather.nextWeatherFormatted) {
                 weatherData.innerHTML += `
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-scale-up">
                         <div class="flex items-center mb-4">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg animate-float">
                                 <span class="text-lg sm:text-2xl">⏰</span>
                             </div>
                             <div>
@@ -498,9 +643,9 @@
 
             if (weather.specialWeathers && Object.keys(weather.specialWeathers).length > 0) {
                 let specialEventsHtml = `
-                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 animate-scale-up">
                         <div class="flex items-center mb-4">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg">
+                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center mr-3 sm:mr-4 shadow-lg animate-float">
                                 <span class="text-lg sm:text-2xl">⭐</span>
                             </div>
                             <div>
@@ -513,7 +658,7 @@
                 
                 for (const [event, data] of Object.entries(weather.specialWeathers)) {
                     specialEventsHtml += `
-                        <div class="flex justify-between items-center p-3 bg-gray-50/80 rounded-lg">
+                        <div class="flex justify-between items-center p-3 bg-gray-50/80 rounded-lg hover:bg-gray-100/80 transition-colors">
                             <div>
                                 <p class="font-medium text-orange-600 capitalize text-sm sm:text-base">${event.replace(/([A-Z])/g, ' $1').trim()}</p>
                                 ${data.timestampFormatted ? `<p class="text-xs sm:text-sm text-gray-600">${data.timestampFormatted}</p>` : ''}
@@ -525,8 +670,6 @@
                 specialEventsHtml += `</div></div>`;
                 weatherData.innerHTML += specialEventsHtml;
             }
-
-            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
         }
 
         function updateCategoryFilter(stocks) {
@@ -586,7 +729,7 @@
                             <div class="${colors.header} p-4 sm:p-5">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <span class="text-xl sm:text-2xl mr-3">${config.emoji}</span>
+                                        <span class="text-xl sm:text-2xl mr-3 animate-float">${config.emoji}</span>
                                         <div>
                                             <h3 class="text-base sm:text-lg font-bold ${colors.headerText}">${config.name}</h3>
                                             <p class="text-xs sm:text-sm ${colors.headerText} opacity-90">${items.length} item${items.length !== 1 ? 's' : ''}</p>
@@ -603,12 +746,14 @@
                                     <div class="space-y-2 sm:space-y-3 max-h-64 sm:max-h-80 overflow-y-auto">
                                         ${items.map(item => {
                                             const displayValue = item.value !== undefined ? item.value : 0;
+                                            const isAvailable = !('available' in item) || item.available;
                                             
                                             return `
-                                                <div class="border ${colors.border} rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:bg-gray-50/80 transition-all duration-200 transform hover:scale-[1.02]">
+                                                <div class="border ${colors.border} rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:bg-gray-50/80 transition-all duration-200 transform hover:scale-[1.02] ${!isAvailable ? 'opacity-60' : ''}">
                                                     <div class="flex justify-between items-center">
                                                         <div class="flex-1 min-w-0 pr-3">
                                                             <h4 class="font-semibold text-gray-900 text-sm sm:text-base truncate">${item.name}</h4>
+                                                            ${!isAvailable ? '<p class="text-xs text-red-500">Out of Stock</p>' : ''}
                                                         </div>
                                                         <div class="flex flex-col items-end">
                                                             <span class="inline-flex items-center px-2 sm:px-4 py-1 sm:py-2 text-sm sm:text-lg font-bold ${colors.quantity} rounded-full">
@@ -644,11 +789,16 @@
                 refreshIcon.classList.add('animate-spin');
 
                 const [stocks, weather] = await Promise.all([
-                    fetchStocks(),
-                    fetchWeather()
+                    fetchStocks().catch(() => null),
+                    fetchWeather().catch(() => null)
                 ]);
 
+                if (!stocks) {
+                    throw new Error('Failed to load stock data from all sources');
+                }
+
                 allStocks = stocks;
+                detectAPISource(stocks);
                 updateCategoryFilter(stocks);
                 renderWeather(weather);
                 filterStocks();
@@ -660,9 +810,10 @@
 
                 setLoadingState(false);
                 setStatusIndicator('success', 'Live');
-                showNotification('success', 'Data Updated', 'Successfully refreshed all game data');
+                showNotification('success', 'Data Updated', `Successfully refreshed data from ${apiSource}`);
                 
                 refreshIcon.classList.remove('animate-spin');
+                document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
             } catch (error) {
                 setLoadingState(false, error.message);
                 setStatusIndicator('error', 'Error');
@@ -703,11 +854,14 @@
             indicator.className = 'flex items-center px-3 py-1.5 text-xs sm:text-sm rounded-full shadow-sm';
             
             if (status === 'success') {
-                indicator.classList.add('bg-green-100', 'text-green-800');
+                indicator.classList.add('bg-green-100', 'text-green-800', 'animate-glow');
                 indicator.innerHTML = `<div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div><span>${text}</span>`;
             } else if (status === 'error') {
                 indicator.classList.add('bg-red-100', 'text-red-800');
                 indicator.innerHTML = `<div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div><span>${text}</span>`;
+            } else if (status === 'warning') {
+                indicator.classList.add('bg-yellow-100', 'text-yellow-800');
+                indicator.innerHTML = `<div class="w-2 h-2 bg-yellow-500 rounded-full mr-2 animate-pulse"></div><span>${text}</span>`;
             }
         }
 
@@ -728,8 +882,10 @@
             showNotification('info', 'Filter Applied', `Showing ${currentFilter === 'all' ? 'all categories' : getCategoryConfig(currentFilter).name}`);
         });
 
+        checkAPIHealth();
         loadData();
         setInterval(loadData, 300000);
+        setInterval(checkAPIHealth, 600000);
     </script>
 </body>
 </html>
