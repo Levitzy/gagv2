@@ -7,13 +7,16 @@ from datetime import datetime
 import os
 from flask import Flask, jsonify, render_template
 
-template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates'))
+template_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "templates")
+)
 app = Flask(__name__, template_folder=template_dir)
 
 
 class GrowAGardenScraper:
     def __init__(self):
         self.base_url = "https://growagarden.gg"
+        self.fallback_url = "https://growagardenstock.com/api"
         self.headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "accept-language": "en-US,en;q=0.6",
@@ -28,19 +31,148 @@ class GrowAGardenScraper:
             "sec-fetch-user": "?1",
             "sec-gpc": "1",
             "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        }
+
+        self.fallback_headers = {
+            "accept": "*/*",
+            "accept-language": "en-US,en;q=0.9",
+            "cache-control": "no-cache",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "sec-ch-ua": '"Brave";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "sec-gpc": "1",
         }
 
     def fetch_page(self, path: str) -> str:
         try:
-            response = requests.get(f"{self.base_url}/{path}", headers=self.headers, timeout=10)
+            response = requests.get(
+                f"{self.base_url}/{path}", headers=self.headers, timeout=10
+            )
             response.raise_for_status()
             return response.text
         except requests.RequestException as e:
             print(f"Error fetching page: {e}")
             return None
 
-    def extract_data_from_script(self, script_content: str, data_key: str) -> Dict[str, Any]:
+    def fetch_fallback_stock(self, stock_type: str) -> Dict[str, Any]:
+        try:
+            timestamp = int(datetime.now().timestamp() * 1000)
+
+            if stock_type == "gear-seeds":
+                url = f"{self.fallback_url}/stock?type=gear-seeds&ts={timestamp}"
+            elif stock_type in ["honey", "cosmetics"]:
+                url = f"{self.fallback_url}/special-stock?type={stock_type}&ts={timestamp}"
+            elif stock_type == "egg":
+                url = f"{self.fallback_url}/stock?type=egg&ts={timestamp}"
+            else:
+                return None
+
+            response = requests.get(url, headers=self.fallback_headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            print(f"Error fetching fallback stock data for {stock_type}: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            print(f"Error parsing fallback JSON for {stock_type}: {e}")
+            return None
+
+    def parse_fallback_item(self, item_string: str) -> Dict[str, Any]:
+        if "**x" in item_string and "**" in item_string:
+            parts = item_string.split("**x")
+            if len(parts) == 2:
+                name = parts[0].strip()
+                quantity_part = parts[1].replace("**", "").strip()
+                try:
+                    quantity = int(quantity_part)
+                    return {"name": name, "quantity": quantity, "inStock": quantity > 0}
+                except ValueError:
+                    pass
+
+        return {
+            "name": item_string.replace("**", "").strip(),
+            "quantity": 1,
+            "inStock": True,
+        }
+
+    def convert_fallback_to_main_format(
+        self, fallback_data: Dict[str, Any]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        converted = {
+            "gear": [],
+            "egg": [],
+            "seed": [],
+            "easter": [],
+            "night": [],
+            "honey": [],
+            "cosmetic": [],
+        }
+
+        if "gear" in fallback_data:
+            converted["gear"] = [
+                self.parse_fallback_item(item) for item in fallback_data["gear"]
+            ]
+
+        if "seeds" in fallback_data:
+            converted["seed"] = [
+                self.parse_fallback_item(item) for item in fallback_data["seeds"]
+            ]
+
+        if "egg" in fallback_data:
+            converted["egg"] = [
+                self.parse_fallback_item(item) for item in fallback_data["egg"]
+            ]
+
+        if "honey" in fallback_data:
+            converted["honey"] = [
+                self.parse_fallback_item(item) for item in fallback_data["honey"]
+            ]
+
+        if "cosmetics" in fallback_data:
+            converted["cosmetic"] = [
+                self.parse_fallback_item(item) for item in fallback_data["cosmetics"]
+            ]
+
+        return converted
+
+    def get_fallback_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
+        print("Attempting to fetch stock data from fallback API...")
+
+        all_fallback_data = {}
+
+        gear_seeds_data = self.fetch_fallback_stock("gear-seeds")
+        if gear_seeds_data:
+            all_fallback_data.update(gear_seeds_data)
+
+        egg_data = self.fetch_fallback_stock("egg")
+        if egg_data:
+            all_fallback_data.update(egg_data)
+
+        honey_data = self.fetch_fallback_stock("honey")
+        if honey_data:
+            all_fallback_data.update(honey_data)
+
+        cosmetics_data = self.fetch_fallback_stock("cosmetics")
+        if cosmetics_data:
+            all_fallback_data.update(cosmetics_data)
+
+        if all_fallback_data:
+            converted_data = self.convert_fallback_to_main_format(all_fallback_data)
+            print("Successfully retrieved stock data from fallback API")
+            return converted_data
+
+        print("Failed to retrieve data from fallback API")
+        return None
+
+    def extract_data_from_script(
+        self, script_content: str, data_key: str
+    ) -> Dict[str, Any]:
         if not script_content or data_key not in script_content:
             return None
 
@@ -98,14 +230,16 @@ class GrowAGardenScraper:
         return None
 
     def get_all_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
+        print("Attempting to fetch stock data from main source...")
         html_content = self.fetch_page("stocks")
         if not html_content:
-            print("Failed to fetch HTML content for stocks")
-            return None
+            print("Failed to fetch HTML content for stocks from main source")
+            return self.get_fallback_stocks()
+
         stock_data = self.extract_data(html_content, "stockDataSSR")
         if not stock_data:
-            print("Failed to extract stock data")
-            return None
+            print("Failed to extract stock data from main source")
+            return self.get_fallback_stocks()
 
         for key, value in stock_data.items():
             if isinstance(value, list):
@@ -114,7 +248,7 @@ class GrowAGardenScraper:
                         item.pop("image", None)
                         item.pop("emoji", None)
 
-        return {
+        result = {
             "gear": stock_data.get("gearStock", []),
             "egg": stock_data.get("eggStock", []),
             "seed": stock_data.get("seedsStock", []),
@@ -123,6 +257,9 @@ class GrowAGardenScraper:
             "honey": stock_data.get("honeyStock", []),
             "cosmetic": stock_data.get("cosmeticsStock", []),
         }
+
+        print("Successfully retrieved stock data from main source")
+        return result
 
     def get_weather(self) -> Dict[str, Any]:
         html_content = self.fetch_page("weather")
@@ -181,66 +318,68 @@ scraper = GrowAGardenScraper()
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @app.route("/docs", methods=["GET"])
 def docs():
-    return render_template('docs.html')
+    return render_template("docs.html")
 
 
 @app.route("/api", methods=["GET"])
 def api_info():
-    return jsonify({
-        "name": "GrowAGarden.gg API Scraper",
-        "version": "1.0.0",
-        "description": "Unofficial API for GrowAGarden.gg game data including stocks and weather information",
-        "credits": {
-            "original_site": "https://growagarden.gg",
-            "developer": "Community API Wrapper",
-            "note": "This is an unofficial API. All data belongs to GrowAGarden.gg"
-        },
-        "endpoints": {
-            "/": {
-                "method": "GET",
-                "description": "Web interface showing current stocks and weather"
+    return jsonify(
+        {
+            "name": "GrowAGarden.gg API Scraper",
+            "version": "1.0.0",
+            "description": "Unofficial API for GrowAGarden.gg game data including stocks and weather information",
+            "credits": {
+                "original_site": "https://growagarden.gg",
+                "developer": "Community API Wrapper",
+                "note": "This is an unofficial API. All data belongs to GrowAGarden.gg",
             },
-            "/docs": {
-                "method": "GET",
-                "description": "API documentation page"
-            },
-            "/api": {
-                "method": "GET",
-                "description": "API information (JSON)"
-            },
-            "/api/stocks": {
-                "method": "GET", 
-                "description": "Get all stock data from all categories",
-                "returns": "Complete stock inventory across all shop categories"
-            },
-            "/api/stocks/{category}": {
-                "method": "GET",
-                "description": "Get stock data for a specific category",
-                "parameters": {
-                    "category": "Stock category name"
+            "endpoints": {
+                "/": {
+                    "method": "GET",
+                    "description": "Web interface showing current stocks and weather",
                 },
-                "valid_categories": ["seed", "gear", "egg", "cosmetic", "honey", "easter", "night"],
-                "example": "/api/stocks/seed",
-                "returns": "Stock data for the specified category only"
+                "/docs": {"method": "GET", "description": "API documentation page"},
+                "/api": {"method": "GET", "description": "API information (JSON)"},
+                "/api/stocks": {
+                    "method": "GET",
+                    "description": "Get all stock data from all categories",
+                    "returns": "Complete stock inventory across all shop categories",
+                },
+                "/api/stocks/{category}": {
+                    "method": "GET",
+                    "description": "Get stock data for a specific category",
+                    "parameters": {"category": "Stock category name"},
+                    "valid_categories": [
+                        "seed",
+                        "gear",
+                        "egg",
+                        "cosmetic",
+                        "honey",
+                        "easter",
+                        "night",
+                    ],
+                    "example": "/api/stocks/seed",
+                    "returns": "Stock data for the specified category only",
+                },
+                "/api/weather": {
+                    "method": "GET",
+                    "description": "Get current and upcoming weather information",
+                    "returns": "Current weather state, timestamps, and special weather events",
+                },
             },
-            "/api/weather": {
-                "method": "GET",
-                "description": "Get current and upcoming weather information",
-                "returns": "Current weather state, timestamps, and special weather events"
-            }
-        },
-        "data_format": {
-            "stocks": "Array of items with name, price, quantity, and availability info",
-            "weather": "Current weather state, timestamps, and special weather events"
-        },
-        "rate_limits": "Please use responsibly to avoid overloading the source website",
-        "disclaimer": "This API scrapes data from GrowAGarden.gg. Data accuracy depends on the source site."
-    })
+            "data_format": {
+                "stocks": "Array of items with name, price, quantity, and availability info",
+                "weather": "Current weather state, timestamps, and special weather events",
+            },
+            "rate_limits": "Please use responsibly to avoid overloading the source website",
+            "disclaimer": "This API scrapes data from GrowAGarden.gg. Data accuracy depends on the source site.",
+        }
+    )
 
 
 @app.route("/stocks", methods=["GET"])
@@ -274,7 +413,9 @@ def api_stock_category(category):
         if stocks and category in stocks:
             return jsonify({category: stocks[category]})
         return (
-            jsonify({"error": f"Failed to retrieve stock data for category: {category}"}),
+            jsonify(
+                {"error": f"Failed to retrieve stock data for category: {category}"}
+            ),
             500,
         )
     except Exception as e:
