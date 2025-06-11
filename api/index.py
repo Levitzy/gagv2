@@ -17,6 +17,7 @@ class GrowAGardenScraper:
     def __init__(self):
         self.base_url = "https://growagarden.gg"
         self.fallback_url = "https://growagardenstock.com/api"
+        self.fallback2_url = "https://www.gamersberg.com/api/grow-a-garden/stock"
         self.headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             "accept-language": "en-US,en;q=0.6",
@@ -37,6 +38,21 @@ class GrowAGardenScraper:
         self.fallback_headers = {
             "accept": "*/*",
             "accept-language": "en-US,en;q=0.9",
+            "cache-control": "no-cache",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "sec-ch-ua": '"Brave";v="137", "Chromium";v="137", "Not/A)Brand";v="24"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "sec-gpc": "1",
+        }
+
+        self.fallback2_headers = {
+            "accept": "*/*",
+            "accept-language": "en-US,en;q=0.8",
             "cache-control": "no-cache",
             "pragma": "no-cache",
             "priority": "u=1, i",
@@ -97,6 +113,31 @@ class GrowAGardenScraper:
             )
             return None
 
+    def fetch_fallback2_stock(self) -> Dict[str, Any]:
+        try:
+            print(f"Fetching from fallback2 URL: {self.fallback2_url}")
+            response = requests.get(
+                self.fallback2_url, headers=self.fallback2_headers, timeout=15
+            )
+            response.raise_for_status()
+
+            data = response.json()
+            print(f"Fallback2 API response: {data}")
+            return data
+
+        except requests.RequestException as e:
+            print(f"Network error fetching fallback2 stock data: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error for fallback2: {e}")
+            print(
+                f"Raw response: {response.text[:500] if 'response' in locals() else 'No response'}"
+            )
+            return None
+        except Exception as e:
+            print(f"Unexpected error fetching fallback2 stock data: {e}")
+            return None
+
     def parse_fallback_item(self, item_string: str) -> Dict[str, Any]:
         clean_item = item_string.replace("**", "").strip()
 
@@ -154,9 +195,98 @@ class GrowAGardenScraper:
 
         return converted
 
-    def get_fallback_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
-        print("Attempting to fetch stock data from fallback API...")
+    def convert_fallback2_to_main_format(
+        self, fallback2_data: Dict[str, Any]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        converted = {
+            "gear": [],
+            "egg": [],
+            "seed": [],
+            "easter": [],
+            "night": [],
+            "honey": [],
+            "cosmetic": [],
+        }
 
+        if not fallback2_data.get("success") or not fallback2_data.get("data"):
+            return converted
+
+        stock_data = fallback2_data["data"][0] if fallback2_data["data"] else {}
+
+        if "eggs" in stock_data and isinstance(stock_data["eggs"], list):
+            converted["egg"] = [
+                {"name": item["name"], "value": item["quantity"]}
+                for item in stock_data["eggs"]
+            ]
+
+        if "seeds" in stock_data and isinstance(stock_data["seeds"], dict):
+            converted["seed"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["seeds"].items()
+            ]
+
+        if "gear" in stock_data and isinstance(stock_data["gear"], dict):
+            converted["gear"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["gear"].items()
+            ]
+
+        if "cosmetic" in stock_data and isinstance(stock_data["cosmetic"], dict):
+            converted["cosmetic"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["cosmetic"].items()
+            ]
+
+        if "honeyevent" in stock_data and isinstance(stock_data["honeyevent"], dict):
+            converted["honey"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["honeyevent"].items()
+            ]
+
+        if "event" in stock_data and isinstance(stock_data["event"], dict):
+            converted["easter"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["event"].items()
+            ]
+
+        if "nightevent" in stock_data and isinstance(stock_data["nightevent"], dict):
+            converted["night"] = [
+                {"name": name, "value": int(quantity)}
+                for name, quantity in stock_data["nightevent"].items()
+            ]
+
+        return converted
+
+    def get_fallback_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
+        print("Attempting to fetch stock data from fallback APIs...")
+
+        print("Trying fallback2 API first...")
+        try:
+            fallback2_data = self.fetch_fallback2_stock()
+            if fallback2_data and fallback2_data.get("success"):
+                converted_data = self.convert_fallback2_to_main_format(fallback2_data)
+
+                total_items = sum(
+                    len(category_items) for category_items in converted_data.values()
+                )
+                if total_items > 0:
+                    print(
+                        f"✓ Successfully retrieved data from fallback2 API - Total items: {total_items}"
+                    )
+
+                    for category, items in converted_data.items():
+                        if items:
+                            print(f"  - {category}: {len(items)} items")
+
+                    return {"source": "fallback2", "data": converted_data}
+                else:
+                    print("✗ Fallback2 API returned empty data")
+            else:
+                print("✗ Failed to fetch from fallback2 API")
+        except Exception as e:
+            print(f"✗ Error with fallback2 API: {e}")
+
+        print("Trying fallback1 API...")
         all_fallback_data = {}
         fallback_success = False
 
@@ -215,16 +345,16 @@ class GrowAGardenScraper:
                 len(category_items) for category_items in converted_data.values()
             )
             print(
-                f"✓ Successfully converted fallback data - Total items: {total_items}"
+                f"✓ Successfully converted fallback1 data - Total items: {total_items}"
             )
 
             for category, items in converted_data.items():
                 if items:
                     print(f"  - {category}: {len(items)} items")
 
-            return converted_data
+            return {"source": "fallback1", "data": converted_data}
 
-        print("✗ Failed to retrieve any data from fallback API")
+        print("✗ Failed to retrieve any data from fallback APIs")
         return None
 
     def extract_data_from_script(
@@ -318,18 +448,22 @@ class GrowAGardenScraper:
             html_content = self.fetch_page("stocks")
             if not html_content:
                 print("❌ Failed to fetch HTML content for stocks from main source")
-                fallback_data = self.get_fallback_stocks()
-                return (
-                    self.normalize_stock_data(fallback_data) if fallback_data else None
-                )
+                fallback_result = self.get_fallback_stocks()
+                if fallback_result:
+                    normalized_data = self.normalize_stock_data(fallback_result["data"])
+                    normalized_data["_source"] = fallback_result["source"]
+                    return normalized_data
+                return None
 
             stock_data = self.extract_data(html_content, "stockDataSSR")
             if not stock_data:
                 print("❌ Failed to extract stock data from main source")
-                fallback_data = self.get_fallback_stocks()
-                return (
-                    self.normalize_stock_data(fallback_data) if fallback_data else None
-                )
+                fallback_result = self.get_fallback_stocks()
+                if fallback_result:
+                    normalized_data = self.normalize_stock_data(fallback_result["data"])
+                    normalized_data["_source"] = fallback_result["source"]
+                    return normalized_data
+                return None
 
             for key, value in stock_data.items():
                 if isinstance(value, list):
@@ -349,16 +483,19 @@ class GrowAGardenScraper:
             }
 
             normalized_result = self.normalize_stock_data(result)
+            normalized_result["_source"] = "main"
 
             total_items = sum(
-                len(category_items) for category_items in normalized_result.values()
+                len(category_items)
+                for category, category_items in normalized_result.items()
+                if category != "_source"
             )
             print(
                 f"✅ Successfully retrieved stock data from main source - Total items: {total_items}"
             )
 
             for category, items in normalized_result.items():
-                if items:
+                if category != "_source" and items:
                     items_with_available = [
                         item for item in items if "available" in item
                     ]
@@ -378,8 +515,12 @@ class GrowAGardenScraper:
 
         except Exception as e:
             print(f"❌ Error fetching from main source: {e}")
-            fallback_data = self.get_fallback_stocks()
-            return self.normalize_stock_data(fallback_data) if fallback_data else None
+            fallback_result = self.get_fallback_stocks()
+            if fallback_result:
+                normalized_data = self.normalize_stock_data(fallback_result["data"])
+                normalized_data["_source"] = fallback_result["source"]
+                return normalized_data
+            return None
 
     def get_weather(self) -> Dict[str, Any]:
         html_content = self.fetch_page("weather")
