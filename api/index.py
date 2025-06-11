@@ -71,16 +71,30 @@ class GrowAGardenScraper:
             elif stock_type == "egg":
                 url = f"{self.fallback_url}/stock?type=egg&ts={timestamp}"
             else:
+                print(f"Unknown stock type: {stock_type}")
                 return None
 
-            response = requests.get(url, headers=self.fallback_headers, timeout=10)
+            print(f"Fetching from fallback URL: {url}")
+            response = requests.get(url, headers=self.fallback_headers, timeout=15)
             response.raise_for_status()
-            return response.json()
+
+            data = response.json()
+            print(f"Fallback API response for {stock_type}: {data}")
+            return data
+
         except requests.RequestException as e:
-            print(f"Error fetching fallback stock data for {stock_type}: {e}")
+            print(f"Network error fetching fallback stock data for {stock_type}: {e}")
             return None
         except json.JSONDecodeError as e:
-            print(f"Error parsing fallback JSON for {stock_type}: {e}")
+            print(f"JSON decode error for {stock_type}: {e}")
+            print(
+                f"Raw response: {response.text[:500] if 'response' in locals() else 'No response'}"
+            )
+            return None
+        except Exception as e:
+            print(
+                f"Unexpected error fetching fallback stock data for {stock_type}: {e}"
+            )
             return None
 
     def parse_fallback_item(self, item_string: str) -> Dict[str, Any]:
@@ -91,25 +105,11 @@ class GrowAGardenScraper:
                 quantity_part = parts[1].replace("**", "").strip()
                 try:
                     quantity = int(quantity_part)
-                    return {
-                        "name": name,
-                        "price": None,
-                        "quantity": quantity,
-                        "inStock": quantity > 0,
-                        "maxQuantity": quantity,
-                        "category": "unknown",
-                    }
+                    return {"name": name, "quantity": quantity}
                 except ValueError:
                     pass
 
-        return {
-            "name": item_string.replace("**", "").strip(),
-            "price": None,
-            "quantity": 1,
-            "inStock": True,
-            "maxQuantity": 1,
-            "category": "unknown",
-        }
+        return {"name": item_string.replace("**", "").strip(), "quantity": 1}
 
     def convert_fallback_to_main_format(
         self, fallback_data: Dict[str, Any]
@@ -125,36 +125,31 @@ class GrowAGardenScraper:
         }
 
         if "gear" in fallback_data and isinstance(fallback_data["gear"], list):
-            for item in fallback_data["gear"]:
-                parsed_item = self.parse_fallback_item(item)
-                parsed_item["category"] = "gear"
-                converted["gear"].append(parsed_item)
+            converted["gear"] = [
+                self.parse_fallback_item(item) for item in fallback_data["gear"]
+            ]
 
         if "seeds" in fallback_data and isinstance(fallback_data["seeds"], list):
-            for item in fallback_data["seeds"]:
-                parsed_item = self.parse_fallback_item(item)
-                parsed_item["category"] = "seed"
-                converted["seed"].append(parsed_item)
+            converted["seed"] = [
+                self.parse_fallback_item(item) for item in fallback_data["seeds"]
+            ]
 
         if "egg" in fallback_data and isinstance(fallback_data["egg"], list):
-            for item in fallback_data["egg"]:
-                parsed_item = self.parse_fallback_item(item)
-                parsed_item["category"] = "egg"
-                converted["egg"].append(parsed_item)
+            converted["egg"] = [
+                self.parse_fallback_item(item) for item in fallback_data["egg"]
+            ]
 
         if "honey" in fallback_data and isinstance(fallback_data["honey"], list):
-            for item in fallback_data["honey"]:
-                parsed_item = self.parse_fallback_item(item)
-                parsed_item["category"] = "honey"
-                converted["honey"].append(parsed_item)
+            converted["honey"] = [
+                self.parse_fallback_item(item) for item in fallback_data["honey"]
+            ]
 
         if "cosmetics" in fallback_data and isinstance(
             fallback_data["cosmetics"], list
         ):
-            for item in fallback_data["cosmetics"]:
-                parsed_item = self.parse_fallback_item(item)
-                parsed_item["category"] = "cosmetic"
-                converted["cosmetic"].append(parsed_item)
+            converted["cosmetic"] = [
+                self.parse_fallback_item(item) for item in fallback_data["cosmetics"]
+            ]
 
         return converted
 
@@ -162,35 +157,73 @@ class GrowAGardenScraper:
         print("Attempting to fetch stock data from fallback API...")
 
         all_fallback_data = {}
+        fallback_success = False
 
-        # Fetch gear and seeds together
-        gear_seeds_data = self.fetch_fallback_stock("gear-seeds")
-        if gear_seeds_data:
-            all_fallback_data.update(gear_seeds_data)
-            print(f"Fetched gear-seeds data: {gear_seeds_data}")
+        try:
+            gear_seeds_data = self.fetch_fallback_stock("gear-seeds")
+            if gear_seeds_data:
+                all_fallback_data.update(gear_seeds_data)
+                print(
+                    f"✓ Fetched gear-seeds: {len(gear_seeds_data.get('gear', []))} gear items, {len(gear_seeds_data.get('seeds', []))} seed items"
+                )
+                fallback_success = True
+            else:
+                print("✗ Failed to fetch gear-seeds data")
+        except Exception as e:
+            print(f"✗ Error fetching gear-seeds: {e}")
 
-        # Fetch other categories
-        egg_data = self.fetch_fallback_stock("egg")
-        if egg_data:
-            all_fallback_data.update(egg_data)
+        try:
+            egg_data = self.fetch_fallback_stock("egg")
+            if egg_data:
+                all_fallback_data.update(egg_data)
+                print(f"✓ Fetched eggs: {len(egg_data.get('egg', []))} items")
+                fallback_success = True
+            else:
+                print("✗ Failed to fetch egg data")
+        except Exception as e:
+            print(f"✗ Error fetching eggs: {e}")
 
-        honey_data = self.fetch_fallback_stock("honey")
-        if honey_data:
-            all_fallback_data.update(honey_data)
+        try:
+            honey_data = self.fetch_fallback_stock("honey")
+            if honey_data:
+                all_fallback_data.update(honey_data)
+                print(f"✓ Fetched honey: {len(honey_data.get('honey', []))} items")
+                fallback_success = True
+            else:
+                print("✗ Failed to fetch honey data")
+        except Exception as e:
+            print(f"✗ Error fetching honey: {e}")
 
-        cosmetics_data = self.fetch_fallback_stock("cosmetics")
-        if cosmetics_data:
-            all_fallback_data.update(cosmetics_data)
+        try:
+            cosmetics_data = self.fetch_fallback_stock("cosmetics")
+            if cosmetics_data:
+                all_fallback_data.update(cosmetics_data)
+                print(
+                    f"✓ Fetched cosmetics: {len(cosmetics_data.get('cosmetics', []))} items"
+                )
+                fallback_success = True
+            else:
+                print("✗ Failed to fetch cosmetics data")
+        except Exception as e:
+            print(f"✗ Error fetching cosmetics: {e}")
 
-        print(f"All fallback data collected: {all_fallback_data}")
-
-        if all_fallback_data:
+        if fallback_success and all_fallback_data:
             converted_data = self.convert_fallback_to_main_format(all_fallback_data)
-            print(f"Converted fallback data: {converted_data}")
-            print("Successfully retrieved stock data from fallback API")
+
+            total_items = sum(
+                len(category_items) for category_items in converted_data.values()
+            )
+            print(
+                f"✓ Successfully converted fallback data - Total items: {total_items}"
+            )
+
+            for category, items in converted_data.items():
+                if items:
+                    print(f"  - {category}: {len(items)} items")
+
             return converted_data
 
-        print("Failed to retrieve data from fallback API")
+        print("✗ Failed to retrieve any data from fallback API")
         return None
 
     def extract_data_from_script(
@@ -253,36 +286,50 @@ class GrowAGardenScraper:
         return None
 
     def get_all_stocks(self) -> Dict[str, List[Dict[str, Any]]]:
-        print("Attempting to fetch stock data from main source...")
-        html_content = self.fetch_page("stocks")
-        if not html_content:
-            print("Failed to fetch HTML content for stocks from main source")
+        print("🔍 Attempting to fetch stock data from main source...")
+
+        try:
+            html_content = self.fetch_page("stocks")
+            if not html_content:
+                print("❌ Failed to fetch HTML content for stocks from main source")
+                return self.get_fallback_stocks()
+
+            stock_data = self.extract_data(html_content, "stockDataSSR")
+            if not stock_data:
+                print("❌ Failed to extract stock data from main source")
+                return self.get_fallback_stocks()
+
+            for key, value in stock_data.items():
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, dict):
+                            item.pop("image", None)
+                            item.pop("emoji", None)
+
+            result = {
+                "gear": stock_data.get("gearStock", []),
+                "egg": stock_data.get("eggStock", []),
+                "seed": stock_data.get("seedsStock", []),
+                "easter": stock_data.get("easterStock", []),
+                "night": stock_data.get("nightStock", []),
+                "honey": stock_data.get("honeyStock", []),
+                "cosmetic": stock_data.get("cosmeticsStock", []),
+            }
+
+            total_items = sum(len(category_items) for category_items in result.values())
+            print(
+                f"✅ Successfully retrieved stock data from main source - Total items: {total_items}"
+            )
+
+            for category, items in result.items():
+                if items:
+                    print(f"  - {category}: {len(items)} items")
+
+            return result
+
+        except Exception as e:
+            print(f"❌ Error fetching from main source: {e}")
             return self.get_fallback_stocks()
-
-        stock_data = self.extract_data(html_content, "stockDataSSR")
-        if not stock_data:
-            print("Failed to extract stock data from main source")
-            return self.get_fallback_stocks()
-
-        for key, value in stock_data.items():
-            if isinstance(value, list):
-                for item in value:
-                    if isinstance(item, dict):
-                        item.pop("image", None)
-                        item.pop("emoji", None)
-
-        result = {
-            "gear": stock_data.get("gearStock", []),
-            "egg": stock_data.get("eggStock", []),
-            "seed": stock_data.get("seedsStock", []),
-            "easter": stock_data.get("easterStock", []),
-            "night": stock_data.get("nightStock", []),
-            "honey": stock_data.get("honeyStock", []),
-            "cosmetic": stock_data.get("cosmeticsStock", []),
-        }
-
-        print("Successfully retrieved stock data from main source")
-        return result
 
     def get_weather(self) -> Dict[str, Any]:
         html_content = self.fetch_page("weather")
